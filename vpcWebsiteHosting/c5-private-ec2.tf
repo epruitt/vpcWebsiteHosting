@@ -46,7 +46,7 @@ user_data = <<-EOF
               yum update -y
 
               # Install Web Server (nginx)
-              yum install -y nginx
+              amazon-linux-extras install -y nginx1
 
               # Start nginx immediately with whatever default content exists,
               # so the ALB health check has something to hit even if the
