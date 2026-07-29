@@ -45,14 +45,47 @@ user_data = <<-EOF
               # Update packages
               yum update -y
 
-              # Install Web Server (nginx)
-              amazon-linux-extras install -y nginx1
+             # Install Web Server (nginx), with retries and verification.
+              # amazon-linux-extras can silently no-op if repo metadata is
+              # stale (e.g. right after `yum update`), so explicitly enable
+              # the topic, refresh metadata, then install via yum directly
+              # and verify the binary actually landed before trusting it.
+              echo "Installing nginx..."
+              max_nginx_attempts=5
+              nginx_attempt=1
+              nginx_installed=false
+
+              until [ "$nginx_installed" = true ]; do
+                amazon-linux-extras enable nginx1
+                yum clean metadata
+                yum install -y nginx
+
+                if command -v nginx &>/dev/null; then
+                  nginx_installed=true
+                  echo "nginx installed successfully on attempt $nginx_attempt"
+                  break
+                fi
+
+                if [ $nginx_attempt -ge $max_nginx_attempts ]; then
+                  echo "ERROR: nginx installation failed after $max_nginx_attempts attempts. Aborting bootstrap."
+                  exit 1
+                fi
+
+                echo "nginx install attempt $nginx_attempt failed, retrying in 10s..."
+                nginx_attempt=$((nginx_attempt + 1))
+                sleep 10
+              done
 
               # Start nginx immediately with whatever default content exists,
               # so the ALB health check has something to hit even if the
               # S3 sync below has a transient failure.
               systemctl enable nginx
               systemctl start nginx
+
+              if ! systemctl is-active --quiet nginx; then
+                echo "ERROR: nginx failed to start. Check 'systemctl status nginx' and journalctl -u nginx."
+                exit 1
+              fi
               echo "nginx started: $(systemctl is-active nginx)"
 
               # Install AWS CLI (usually preinstalled, ensuring latest)
