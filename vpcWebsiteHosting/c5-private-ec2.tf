@@ -31,6 +31,13 @@ resource "aws_instance" "private_ec2" {
   vpc_security_group_ids = [module.vpc.ec2_security_group_id]
   iam_instance_profile = module.vpc.iam_instance_profile_name
 
+  # Force instance replacement whenever user_data changes.
+  # AWS provider v4+ no longer treats user_data as ForceNew by
+  # default (see user_data_replace_on_change), so without this,
+  # bootstrap script changes silently update instance metadata
+  # without ever re-executing on a fresh boot.
+  user_data_replace_on_change = true
+
   depends_on = [module.vpc]
 
 user_data = trimspace(<<-EOF
