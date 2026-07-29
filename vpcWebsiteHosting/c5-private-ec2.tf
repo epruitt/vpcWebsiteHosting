@@ -33,7 +33,7 @@ resource "aws_instance" "private_ec2" {
 
   depends_on = [module.vpc]
 
-user_data = <<-EOF
+user_data = trimspace(<<-EOF
               #!/bin/bash
               set -uo pipefail
 
@@ -130,6 +130,7 @@ user_data = <<-EOF
 
               echo "=== Bootstrap finished: $(date) ==="
               EOF
+              )
 
   tags = {
     Name        = "${var.environment_name}-private-ec2"
