@@ -55,7 +55,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_high_cpu" {
   namespace           = "AWS/EC2"
   period              = 300
   statistic           = "Average"
-  threshold           = 5
+  threshold           = 80
   alarm_actions       = [aws_sns_topic.cloudwatch_alarms_topic.arn]
   ok_actions          = [aws_sns_topic.cloudwatch_alarms_topic.arn]
   tags                = var.tags
@@ -77,7 +77,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_high_memory" {
   namespace           = "CWAgent"
   period              = 60
   statistic           = "Average"
-  threshold           = 5
+  threshold           = 90
   alarm_actions       = [aws_sns_topic.cloudwatch_alarms_topic.arn]
   ok_actions          = [aws_sns_topic.cloudwatch_alarms_topic.arn]
   tags                = var.tags
@@ -102,7 +102,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_high_disk" {
   namespace           = "CWAgent"
   period              = 60
   statistic           = "Average"
-  threshold           = 5
+  threshold           = 90
   alarm_actions       = [aws_sns_topic.cloudwatch_alarms_topic.arn]
   ok_actions          = [aws_sns_topic.cloudwatch_alarms_topic.arn]
   tags                = var.tags
