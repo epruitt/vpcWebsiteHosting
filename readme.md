@@ -57,7 +57,7 @@ All infrastructure validation is done via the AWS CLI and SSM Session Manager â€
 
 ## Status
 
-Phases 1 and 2 are implemented. Phase 3 has not been started and is blocked on Phases 1 and 2 passing full end-to-end validation.
+Phases 1 and 2 are implemented. Phase 3 has not been started yet.
 
 ---
 *This README is a temporary working draft and will be revised as the project progresses.*
