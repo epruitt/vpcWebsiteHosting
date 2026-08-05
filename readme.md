@@ -12,6 +12,7 @@ vpcWebsiteHosting/
 ├── c4-outputs.tf            # Root-level outputs
 ├── c5-private-ec2.tf         # Private EC2 instance + ALB target group attachment
 ├── c6-monitoring.tf          # CloudWatch alarms, SNS, dashboard
+├── c7-github-oidc.tf         # GitHub Actions OIDC provider, deploy/plan IAM roles
 ├── agent-config.json         # CloudWatch Agent configuration
 └── modules/
     └── vpc/
@@ -46,10 +47,13 @@ All infrastructure is deployed to `us-east-2`.
 - SNS topic with email subscription for real-time alerting
 - Consolidated CloudWatch dashboard for EC2 and ALB performance
 
-### Phase 3 — CI/CD (not yet started)
-- GitHub Actions workflow to plan and apply Terraform changes on push/PR
-- Automated deployment gated by a post-deploy health check
-- Automatic rollback to the last known-good state if a deploy fails validation
+
+### Phase 3 — CI/CD (in progress)
+- ✅ GitHub OIDC provider and IAM roles implemented (`c7-github-oidc.tf`): separate least-privilege roles for read-only PR plans vs. production deploys, trust policies scoped to specific repo/branch/environment claims
+- ✅  GitHub Actions workflow files (`terraform-pr-check.yml`, `terraform-deploy.yml`) 
+- ⬜ `production` GitHub Environment with manual approval gate not yet configured
+- ⬜ Post-deploy smoke-test job not yet implemented
+- ⬜ Git-tag-based rollback (`last-known-good`) not yet implemented; S3 state versioning is available as a safety net
 
 ## Validation Approach
 
@@ -57,7 +61,7 @@ All infrastructure validation is done via the AWS CLI and SSM Session Manager �
 
 ## Status
 
-Phases 1 and 2 are implemented. Phase 3 has not been started yet.
+Phases 1 and 2 are implemented and Phase 3's IAM/OIDC foundation is in place, but the GitHub Actions workflow files, approval gate, and rollback mechanism are still pending. 
 
 ---
 *This README is a temporary working draft and will be revised as the project progresses.*
