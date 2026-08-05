@@ -1,0 +1,227 @@
+name: Terraform Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'vpcWebsiteHosting/**.tf'
+      - 'vpcWebsiteHosting/**.tfvars'
+      - 'vpcWebsiteHosting/agent-config.json'
+
+# Concurrency group ensures merges are applied sequentially, preventing race conditions
+concurrency:
+  group: terraform-production-apply
+  cancel-in-progress: false # Queue runs instead of canceling to ensure order
+
+# Permissions for OIDC and Git tagging
+permissions:
+  id-token: write
+  contents: write # Required for git tag push
+  pull-requests: read
+
+defaults:
+  run:
+    working-directory: vpcWebsiteHosting
+
+env:
+  TF_IN_AUTOMATION: true
+  AWS_REGION: us-east-2
+
+jobs:
+  # Job 1: Test (Plan & Artifact)
+  test:
+    name: Test & Plan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        # Backend is fully specified in c1-versions.tf; no -backend-config needed.
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        env:
+          TF_VAR_alert_email: ${{ secrets.TF_VAR_ALERT_EMAIL }}
+        run: terraform plan -no-color -input=false -out=tfplan
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: vpcWebsiteHosting/tfplan
+          retention-days: 1
+
+  # Job 2: Approval Gate
+  approval:
+    name: Production Approval
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production # Pauses workflow until approved in GitHub UI
+    steps:
+      - name: Approved
+        run: echo "Deployment approved by reviewer"
+
+  # Job 3: Apply
+  apply:
+    name: Terraform Apply
+    needs: approval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: vpcWebsiteHosting
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        # Applying the saved plan file -- variable values are already baked
+        # into tfplan from the test job, so TF_VAR_alert_email is not needed here.
+        run: terraform apply -auto-approve tfplan
+
+  # Job 4: Smoke Test
+  smoke-test:
+    name: Smoke Test
+    needs: apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init (Read Outputs)
+        run: terraform init -input=false
+
+      - name: Get ALB DNS Name
+        id: alb
+        run: |
+          DNS_NAME=$(terraform output -raw alb_dns_name)
+          echo "dns_name=$DNS_NAME" >> "$GITHUB_OUTPUT"
+          echo "Testing endpoint: $DNS_NAME"
+
+      - name: Wait for ALB Propagation
+        run: sleep 30
+
+      - name: HTTP Health Check
+        run: |
+          curl -sf --retry 5 --retry-delay 10 --retry-connrefused "http://${{ steps.alb.outputs.dns_name }}" || exit 1
+
+      - name: Check Target Group Health
+        run: |
+          # Correct output name is alb_target_group_arn (see c4-outputs.tf)
+          TG_ARN=$(terraform output -raw alb_target_group_arn)
+          HEALTH=$(aws elbv2 describe-target-health --target-group-arn "$TG_ARN" --query 'TargetHealthDescriptions[0].TargetHealth.State' --output text)
+          echo "Target Health State: $HEALTH"
+          if [ "$HEALTH" != "healthy" ]; then
+            echo "Target group is not healthy"
+            exit 1
+          fi
+
+  # Job 5: Tag Last Known Good
+  # Runs only after apply AND smoke-test both succeed, so the moving tag
+  # never points at a commit that deployed but failed verification.
+  tag-last-known-good:
+    name: Tag Last Known Good
+    needs: [apply, smoke-test]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history needed to move the tag
+
+      - name: Move last-known-good Tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Single, stable moving tag -- rollback always checks out this exact name.
+          git tag -f last-known-good
+          git push -f origin last-known-good
+          # Optional audit trail: a second, uniquely-named tag per successful deploy.
+          AUDIT_TAG="deployed-$(date +%Y%m%d-%H%M%S)"
+          git tag "$AUDIT_TAG"
+          git push origin "$AUDIT_TAG"
+
+  # Job 6: Rollback (Automated Recovery)
+  rollback:
+    name: Automated Rollback
+    needs: [apply, smoke-test]
+    if: failure() && needs.apply.result == 'success'
+    runs-on: ubuntu-latest
+    # No environment/approval gate here on purpose: this job only ever applies
+    # code that already passed through the full pipeline (test -> approval ->
+    # apply -> smoke-test) on a prior run and was tagged last-known-good.
+    # Gating an automated recovery path behind a human approval defeats the
+    # point of automatic rollback -- if that's not the intent, scope a
+    # dedicated 'emergency-rollback' environment with no required reviewers
+    # instead of reusing 'production'.
+    steps:
+      - name: Checkout Last Known Good
+        uses: actions/checkout@v4
+        with:
+          ref: last-known-good
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Rollback Apply
+        # Fresh (non-saved-plan) apply, so the var must be supplied again.
+        env:
+          TF_VAR_alert_email: ${{ secrets.TF_VAR_ALERT_EMAIL }}
+        run: terraform apply -auto-approve -input=false
+
+      - name: Notify Rollback via SNS
+        run: |
+          TOPIC_ARN=$(terraform output -raw sns_topic_arn)
+          aws sns publish \
+            --topic-arn "$TOPIC_ARN" \
+            --message "AUTOMATED ROLLBACK TRIGGERED: Deploy or smoke test failed on commit ${{ github.sha }}. Infrastructure reverted to 'last-known-good' tag." \
+            --subject "Terraform Rollback Notification"
