@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 # 1. OIDC Provider Configuration
 # Only one provider per AWS account is allowed for this URL.
 # We dynamically fetch the thumbprint to avoid manual rotation issues.
@@ -150,19 +152,39 @@ data "aws_iam_policy_document" "deploy_permissions" {
   }
 
   # Core Infrastructure Services (EC2, ALB/ELB, SSM, SNS, CloudWatch)
-  statement {
+ statement {
     sid = "CoreInfraServices"
     actions = [
       "ec2:*",
       "elasticloadbalancing:*",
+    ]
+    resources = ["*"] # ec2/elb actions don't support meaningful resource-level scoping
+  }
+
+  statement {
+    sid = "SsmParameterAccess"
+    actions = [
       "ssm:GetParameter",
       "ssm:PutParameter",
       "ssm:DeleteParameter",
       "ssm:AddTagsToResource",
+    ]
+    resources = [
+      "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/AmazonCloudWatch-*"
+    ]
+  }
+
+  statement {
+    sid = "SnsAndCloudWatchAccess"
+    actions = [
       "sns:*",
       "cloudwatch:*"
     ]
-    resources = ["*"] # Scope down to specific ARNs in production for better security
+    resources = [
+      "arn:aws:sns:*:${data.aws_caller_identity.current.account_id}:cloudwatch-alarms-topic-*",
+      "arn:aws:cloudwatch:*:${data.aws_caller_identity.current.account_id}:alarm:*",
+      "arn:aws:cloudwatch::${data.aws_caller_identity.current.account_id}:dashboard/*"
+    ]
   }
 
   # IAM: role, inline policy, and instance profile lifecycle for the EC2 role
@@ -194,8 +216,8 @@ data "aws_iam_policy_document" "deploy_permissions" {
     # since this is the statement that would matter most for privilege
     # escalation if over-scoped.
     resources = [
-      "arn:aws:iam::*:role/*",
-      "arn:aws:iam::*:instance-profile/*"
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:instance-profile/*"
     ]
   }
 
@@ -205,7 +227,7 @@ data "aws_iam_policy_document" "deploy_permissions" {
   statement {
     sid       = "PassEc2RoleOnly"
     actions   = ["iam:PassRole"]
-    resources = ["arn:aws:iam::*:role/*"]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*"]
     condition {
       test     = "StringEquals"
       variable = "iam:PassedToService"
@@ -216,9 +238,11 @@ data "aws_iam_policy_document" "deploy_permissions" {
   # Allow this pipeline to manage its own OIDC provider resource, since it's
   # tracked in the same Terraform state (required for future plan/apply runs
   # to read/update it without drifting or erroring).
-  statement {
+statement {
     sid = "ManageOwnOidcProvider"
     actions = [
+      "iam:CreateOpenIDConnectProvider",
+      "iam:DeleteOpenIDConnectProvider",
       "iam:GetOpenIDConnectProvider",
       "iam:UpdateOpenIDConnectProviderThumbprint",
       "iam:TagOpenIDConnectProvider"
