@@ -40,14 +40,16 @@ data "aws_iam_policy_document" "github_trust_deploy" {
       values   = ["sts.amazonaws.com"]
     }
 
-    # Restrict to the production GitHub Environment specifically, so this role
-    # can only be assumed from a run that has passed the required-reviewer
-    # approval gate -- not just any push to main. This mirrors the workflow's
-    # own approval gate on the AWS trust-policy side.
+    # Restrict to pushes on main. The human approval gate itself is
+    # enforced by the "production" GitHub Environment's required-reviewer
+    # rule on the `approval` job (via `needs: approval` in the workflow
+    # graph) -- not by an `environment:production` claim in the OIDC
+    # token, since the apply/smoke-test/rollback jobs that actually need
+    # this role don't set `environment:` themselves.
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:E/vpcWebsiteHosting:environment:production"]
+      values   = ["repo:epruitt/vpcWebsiteHosting:ref:refs/heads/main"]
     }
   }
 }
@@ -70,10 +72,16 @@ data "aws_iam_policy_document" "github_trust_plan" {
       values   = ["sts.amazonaws.com"]
     }
 
+    # Plan role is now used both by PR-triggered plans (pull_request) and
+    # by the pre-approval "test" plan job in terraform-deploy.yml, which
+    # runs on push to main 
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:E/vpcWebsiteHosting:pull_request"]
+      values = [
+        "repo:epruitt/vpcWebsiteHosting:pull_request",
+        "repo:epruitt/vpcWebsiteHosting:ref:refs/heads/main"
+      ]
     }
   }
 }

@@ -68,7 +68,7 @@ jobs:
           soft_fail: false
           # Scan broadly and gate on severity rather than an explicit
           # check-ID allowlist, so new/unlisted findings aren't silently skipped.
-          severity: CRITICAL,HIGH
+          check: CRITICAL,HIGH
           output_format: cli
 
   # Job 3: Plan & Comment
