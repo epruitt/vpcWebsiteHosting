@@ -49,7 +49,10 @@ data "aws_iam_policy_document" "github_trust_deploy" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:epruitt/vpcWebsiteHosting:ref:refs/heads/main"]
+      values = [
+        "repo:epruitt/vpcWebsiteHosting:ref:refs/heads/main",
+        "repo:epruitt@*/vpcWebsiteHosting@*:ref:refs/heads/main"
+      ]
     }
   }
 }
@@ -80,7 +83,9 @@ data "aws_iam_policy_document" "github_trust_plan" {
       variable = "token.actions.githubusercontent.com:sub"
       values = [
         "repo:epruitt/vpcWebsiteHosting:pull_request",
-        "repo:epruitt/vpcWebsiteHosting:ref:refs/heads/main"
+        "repo:epruitt/vpcWebsiteHosting:ref:refs/heads/main",
+        "repo:epruitt@*/vpcWebsiteHosting@*:pull_request",
+        "repo:epruitt@*/vpcWebsiteHosting@*:ref:refs/heads/main"
       ]
     }
   }
