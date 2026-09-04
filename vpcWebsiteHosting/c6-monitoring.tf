@@ -115,7 +115,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_high_disk" {
     path       = "/"
     fstype     = "xfs"
   }
-  
+
 }
 
 # ALB Unhealthy Host Count
@@ -159,7 +159,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
   dimensions = {
     LoadBalancer = module.vpc.alb_arn_suffix
   }
-  
+
 }
 
 #Cloudwatch Dashboard for EC2 and ALB Monitoring
@@ -170,10 +170,10 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
     widgets = [
       # --- Header ---
       {
-        type = "text"
-        x    = 0
-        y    = 0
-        width = 24
+        type   = "text"
+        x      = 0
+        y      = 0
+        width  = 24
         height = 1
         properties = {
           markdown = "# Omnifood Infrastructure Overview\nReal-time monitoring using "
@@ -182,10 +182,10 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
 
       # Alarm Status Widget
       {
-        type = "alarm"
-        x    = 0
-        y    = 1
-        width = 24
+        type   = "alarm"
+        x      = 0
+        y      = 1
+        width  = 24
         height = 2
         properties = {
           title = "Current Alarm Status"
@@ -201,10 +201,10 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
 
       # Widget 1: EC2 Health
       {
-        type = "metric"
-        x    = 0
-        y    = 3
-        width = 12
+        type   = "metric"
+        x      = 0
+        y      = 3
+        width  = 12
         height = 6
         properties = {
           title = "EC2 Health: CPU & Status Checks"
@@ -219,8 +219,8 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
           view   = "timeSeries"
           yAxis = {
             left = {
-              min = 0
-              max = 100
+              min   = 0
+              max   = 100
               label = "Percent"
             }
           }
@@ -229,10 +229,10 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
 
       # Widget 2: Network & Disk I/O
       {
-        type = "metric"
-        x    = 12
-        y    = 3
-        width = 12
+        type   = "metric"
+        x      = 12
+        y      = 3
+        width  = 12
         height = 6
         properties = {
           title = "EC2 I/O: Network & Disk Operations"
@@ -251,10 +251,10 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
 
       # Section Header: Load Balancer
       {
-        type = "text"
-        x    = 0
-        y    = 9
-        width = 24
+        type   = "text"
+        x      = 0
+        y      = 9
+        width  = 24
         height = 1
         properties = {
           markdown = "### Application Load Balancer Performance"
@@ -263,10 +263,10 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
 
       # Widget 3: ALB Traffic
       {
-        type = "metric"
-        x    = 0
-        y    = 10
-        width = 12
+        type   = "metric"
+        x      = 0
+        y      = 10
+        width  = 12
         height = 6
         properties = {
           title = "ALB Traffic: Requests & Latency"
@@ -283,10 +283,10 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
 
       # Widget 4: ALB Health
       {
-        type = "metric"
-        x    = 12
-        y    = 10
-        width = 12
+        type   = "metric"
+        x      = 12
+        y      = 10
+        width  = 12
         height = 6
         properties = {
           title = "ALB Health: Host Count"
@@ -300,7 +300,7 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
           view   = "timeSeries"
           yAxis = {
             left = {
-              min = 0
+              min   = 0
               label = "Hosts"
             }
           }
@@ -309,10 +309,10 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
 
       # Widget 5: Errors 
       {
-        type = "metric"
-        x    = 0
-        y    = 16
-        width = 24
+        type   = "metric"
+        x      = 0
+        y      = 16
+        width  = 24
         height = 6
         properties = {
           title = "Error Rates: Target & ELB 5xx"

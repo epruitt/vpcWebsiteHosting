@@ -165,7 +165,7 @@ data "aws_iam_policy_document" "deploy_permissions" {
   }
 
   # Core Infrastructure Services (EC2, ALB/ELB, SSM, SNS, CloudWatch)
- statement {
+  statement {
     sid = "CoreInfraServices"
     actions = [
       "ec2:*",
@@ -251,7 +251,7 @@ data "aws_iam_policy_document" "deploy_permissions" {
   # Allow this pipeline to manage its own OIDC provider resource, since it's
   # tracked in the same Terraform state (required for future plan/apply runs
   # to read/update it without drifting or erroring).
-statement {
+  statement {
     sid = "ManageOwnOidcProvider"
     actions = [
       "iam:CreateOpenIDConnectProvider",

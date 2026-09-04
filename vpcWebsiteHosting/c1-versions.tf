@@ -29,7 +29,7 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
-}# trigger
+} # trigger
 # retest
 # retest2
 # retest3
