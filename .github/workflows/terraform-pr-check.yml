@@ -8,6 +8,10 @@ on:
       - 'vpcWebsiteHosting/**.tf'
       - 'vpcWebsiteHosting/**.tfvars'
       - 'vpcWebsiteHosting/agent-config.json'
+      - 'vpcWebsiteHosting-bootstrap/**.tf'
+      - 'vpcWebsiteHosting-bootstrap/**.tfvars'
+      - 'vpcWebsiteHosting-bootstrap/agent-config.json'
+
 
 # Permissions required for OIDC and PR comments
 permissions:
