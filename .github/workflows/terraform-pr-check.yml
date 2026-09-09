@@ -100,8 +100,8 @@ jobs:
         id: plan
         env:
           TF_VAR_alert_email: ${{ secrets.TF_VAR_ALERT_EMAIL }}
-        run: terraform plan -no-color -input=false -out=tfplan
-        continue-on-error: true # Allow job to complete so the comment step can post either way
+        run: terraform plan -no-color -input=false -out=tfplan -lock-timeout=5m
+        continue-on-error: true
 
       - name: Upload Plan Artifact
         # Full plan output can exceed GitHub's PR comment size limit,
