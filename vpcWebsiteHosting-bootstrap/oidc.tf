@@ -279,6 +279,7 @@ data "aws_iam_policy_document" "plan_permissions" {
     actions = [
       "s3:GetObject",
       "s3:PutObject", # Needed for lockfile
+      "s3:DeleteObject", # Needed to release the lockfile (S3 native locking)
       "s3:ListBucket"
     ]
     resources = [
