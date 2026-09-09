@@ -29,7 +29,7 @@ resource "aws_instance" "private_ec2" {
   instance_type          = "t2.micro"
   subnet_id              = element(module.vpc.private_subnet_ids, 0)
   vpc_security_group_ids = [module.vpc.ec2_security_group_id]
-  iam_instance_profile = module.vpc.iam_instance_profile_name
+  iam_instance_profile   = module.vpc.iam_instance_profile_name
 
   # Force instance replacement whenever user_data changes.
   # AWS provider v4+ no longer treats user_data as ForceNew by
@@ -137,7 +137,7 @@ resource "aws_instance" "private_ec2" {
 
               echo "=== Bootstrap finished: $(date) ==="
               EOF
-              )
+  )
 
   tags = {
     Name        = "${var.environment_name}-private-ec2"
@@ -150,7 +150,7 @@ resource "aws_instance" "private_ec2" {
   }
 
   # Enable EBS encryption for the root volume
-  root_block_device{
+  root_block_device {
     encrypted = true
   }
 }

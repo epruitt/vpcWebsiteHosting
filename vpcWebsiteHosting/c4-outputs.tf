@@ -64,7 +64,7 @@ output "alb_target_group_arn" {
 }
 
 output "ec2_instance_profile_name" {
-  value = module.vpc.iam_instance_profile_name
+  value       = module.vpc.iam_instance_profile_name
   description = "The name of the IAM instance profile for EC2 instances"
 }
 
