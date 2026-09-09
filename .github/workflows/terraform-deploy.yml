@@ -8,6 +8,10 @@ on:
       - 'vpcWebsiteHosting/**.tf'
       - 'vpcWebsiteHosting/**.tfvars'
       - 'vpcWebsiteHosting/agent-config.json'
+      - 'vpcWebsiteHosting-bootstrap/**.tf'
+      - 'vpcWebsiteHosting-bootstrap/**.tfvars'
+      - 'vpcWebsiteHosting-bootstrap/agent-config.json'
+
 
 # Concurrency group ensures merges are applied sequentially, preventing race conditions
 concurrency:
@@ -57,13 +61,21 @@ jobs:
         id: plan
         env:
           TF_VAR_alert_email: ${{ secrets.TF_VAR_ALERT_EMAIL }}
-        run: terraform plan -no-color -input=false -out=tfplan
+        run: |
+          set +e
+          terraform plan -no-color -input=false -out=tfplan > plan_output.txt 2>&1
+          exitcode=$?
+          cat plan_output.txt
+          echo "exitcode=$exitcode" >> "$GITHUB_OUTPUT"
+          exit $exitcode
 
       - name: Upload Plan Artifact
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
-          path: vpcWebsiteHosting/tfplan
+          path: |
+            vpcWebsiteHosting/tfplan
+            vpcWebsiteHosting/plan_output.txt
           retention-days: 1
 
   # Job 2: Approval Gate
