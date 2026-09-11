@@ -295,7 +295,7 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
           title = "ALB Health: Host Count"
           metrics = [
             ["AWS/ApplicationELB", "HealthyHostCount", "LoadBalancer", module.vpc.alb_arn_suffix, "TargetGroup", module.vpc.target_group_arn_suffix, { stat = "Average", label = "Healthy" }],
-            ["AWS/ApplicationELB", "UnHealthyHostCount", "LoadBalancer", module.vpc.alb_arn_suffix, "TargetGroup", module.vpc.target_group_arn_suffix, { stat = "Maximum", label = "Unhealthy", col...
+            ["AWS/ApplicationELB", "UnHealthyHostCount", "LoadBalancer", module.vpc.alb_arn_suffix, "TargetGroup", module.vpc.target_group_arn_suffix, { stat = "Maximum", label = "Unhealthy", color = "#d62728" }]
           ]
           period = 60
           stat   = "Average"
