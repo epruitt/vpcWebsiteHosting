@@ -4,10 +4,13 @@ data "aws_region" "current" {
 
 # Store the Agent Config in SSM Parameter Store
 resource "aws_ssm_parameter" "cloudwatch_agent_config" {
-  name        = "AmazonCloudWatch-ec2-config"
+  # Use a namespaced, environment-scoped parameter in *this* account.
+  # Leading slash is recommended for SSM parameter hierarchies.
+  name        = "/omnifood/${var.environment_name}/cloudwatch/agent-config"
+  description = "CloudWatch Agent configuration for EC2 instances (Omnifood ${var.environment_name})"
   type        = "String"
   value       = file("${path.module}/agent-config.json")
-  description = "CloudWatch Agent configuration for EC2 instances"
+  tags        = var.tags
 }
 
 # SNS Topic for CloudWatch Alarms
