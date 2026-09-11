@@ -4,10 +4,13 @@ data "aws_region" "current" {
 
 # Store the Agent Config in SSM Parameter Store
 resource "aws_ssm_parameter" "cloudwatch_agent_config" {
-  name        = "AmazonCloudWatch-ec2-config"
+  # Use a namespaced, environment-scoped parameter in *this* account.
+  # Leading slash is recommended for SSM parameter hierarchies.
+  name        = "/omnifood/${var.environment_name}/cloudwatch/agent-config"
+  description = "CloudWatch Agent configuration for EC2 instances (Omnifood ${var.environment_name})"
   type        = "String"
   value       = file("${path.module}/agent-config.json")
-  description = "CloudWatch Agent configuration for EC2 instances"
+  tags        = var.tags
 }
 
 # SNS Topic for CloudWatch Alarms
@@ -292,7 +295,7 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
           title = "ALB Health: Host Count"
           metrics = [
             ["AWS/ApplicationELB", "HealthyHostCount", "LoadBalancer", module.vpc.alb_arn_suffix, "TargetGroup", module.vpc.target_group_arn_suffix, { stat = "Average", label = "Healthy" }],
-            ["AWS/ApplicationELB", "UnHealthyHostCount", "LoadBalancer", module.vpc.alb_arn_suffix, "TargetGroup", module.vpc.target_group_arn_suffix, { stat = "Maximum", label = "Unhealthy", color = "#d62728" }]
+            ["AWS/ApplicationELB", "UnHealthyHostCount", "LoadBalancer", module.vpc.alb_arn_suffix, "TargetGroup", module.vpc.target_group_arn_suffix, { stat = "Maximum", label = "Unhealthy", col...
           ]
           period = 60
           stat   = "Average"
