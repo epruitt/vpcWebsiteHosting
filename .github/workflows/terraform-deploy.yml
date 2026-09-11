@@ -220,3 +220,49 @@ jobs:
             --topic-arn "$TOPIC_ARN" \
             --message "AUTOMATED ROLLBACK TRIGGERED: Deploy or smoke test failed on commit ${{ github.sha }}. Infrastructure reverted to 'last-known-good' tag." \
             --subject "Terraform Rollback Notification"
+
+  destroy-approval:
+    name: Destruction Approval
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Approved for Destruction
+        run: echo "Infrastructure destruction approved by reviewer"
+
+  destroy:
+    name: Terraform Destroy
+    needs: destroy-approval
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vpcWebsiteHosting
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Destroy
+        env:
+          TF_VAR_alert_email: ${{ secrets.TF_VAR_ALERT_EMAIL }}
+        run: terraform destroy -auto-approve -input=false
+
+      - name: Notify Destruction via SNS
+        if: success()
+        run: |
+          TOPIC_ARN=$(terraform output -raw sns_topic_arn)
+          aws sns publish \
+            --topic-arn "$TOPIC_ARN" \
+            --message "INFRASTRUCTURE DESTRUCTION COMPLETED: All resources have been destroyed on commit ${{ github.sha }}." \
+            --subject "Terraform Destruction Notification"
