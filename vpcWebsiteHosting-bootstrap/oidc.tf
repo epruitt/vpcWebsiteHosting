@@ -312,27 +312,28 @@ data "aws_iam_policy_document" "plan_permissions" {
   }
 
   # Read-only access to verify resources exist
-  statement {
-    sid = "CoreInfraReadOnly"
-    actions = [
-      "ec2:Describe*",
-      "elasticloadbalancing:Describe*",
-      "iam:GetRole",
-      "iam:GetRolePolicy",
-      "iam:ListRolePolicies",
-      "iam:ListAttachedRolePolicies",
-      "iam:GetInstanceProfile",
-      "iam:ListInstanceProfilesForRole",
-      "iam:GetOpenIDConnectProvider",
-      "ssm:GetParameter",
-      "sns:ListTopics",
-      "sns:GetTopicAttributes",
-      "cloudwatch:Describe*",
-      "cloudwatch:GetDashboard",
-      "cloudwatch:ListTagsForResource"
-    ]
-    resources = ["*"]
-  }
+statement {
+  sid = "CoreInfraReadOnly"
+  actions = [
+    "ec2:Describe*",
+    "elasticloadbalancing:Describe*",
+    "iam:GetRole",
+    "iam:GetRolePolicy",
+    "iam:ListRolePolicies",
+    "iam:ListAttachedRolePolicies",
+    "iam:GetInstanceProfile",
+    "iam:ListInstanceProfilesForRole",
+    "iam:GetOpenIDConnectProvider",
+    "ssm:GetParameter",
+    "sns:ListTopics",
+    "sns:GetTopicAttributes",
+    "sns:ListTagsForResource",    # ADD THIS LINE
+    "cloudwatch:Describe*",
+    "cloudwatch:GetDashboard",
+    "cloudwatch:ListTagsForResource"
+  ]
+  resources = ["*"]
+}
 }
 
 resource "aws_iam_role_policy" "plan_policy" {
