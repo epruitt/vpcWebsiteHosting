@@ -143,8 +143,7 @@ data "aws_iam_policy_document" "deploy_permissions" {
     actions = [
       "s3:CreateBucket",
       "s3:DeleteBucket",
-      "s3:GetBucketAcl",
-      "s3:PutBucketAcl",
+      "s3:GetBucketAcl",        
       "s3:GetObject",
       "s3:PutObject",
       "s3:DeleteObject",
@@ -186,7 +185,6 @@ data "aws_iam_policy_document" "deploy_permissions" {
       "ssm:AddTagsToResource",
     ]
     resources = [
-      "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/omnifood/*",
       "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/AmazonCloudWatch-*"
     ]
   }
@@ -299,9 +297,9 @@ data "aws_iam_policy_document" "plan_permissions" {
       "s3:GetObject",
       "s3:ListBucket",
       "s3:GetBucketPolicy",
-      "s3:GetBucketAcl",
       "s3:GetBucketVersioning",
       "s3:GetEncryptionConfiguration",
+      "s3:GetBucketAcl",
       "s3:GetBucketPublicAccessBlock",
       "s3:GetBucketTagging"
     ]
@@ -312,28 +310,28 @@ data "aws_iam_policy_document" "plan_permissions" {
   }
 
   # Read-only access to verify resources exist
-statement {
-  sid = "CoreInfraReadOnly"
-  actions = [
-    "ec2:Describe*",
-    "elasticloadbalancing:Describe*",
-    "iam:GetRole",
-    "iam:GetRolePolicy",
-    "iam:ListRolePolicies",
-    "iam:ListAttachedRolePolicies",
-    "iam:GetInstanceProfile",
-    "iam:ListInstanceProfilesForRole",
-    "iam:GetOpenIDConnectProvider",
-    "ssm:GetParameter",
-    "sns:ListTopics",
-    "sns:GetTopicAttributes",
-    "sns:ListTagsForResource",    # ADD THIS LINE
-    "cloudwatch:Describe*",
-    "cloudwatch:GetDashboard",
-    "cloudwatch:ListTagsForResource"
-  ]
-  resources = ["*"]
-}
+  statement {
+    sid = "CoreInfraReadOnly"
+    actions = [
+      "ec2:Describe*",
+      "elasticloadbalancing:Describe*",
+      "iam:GetRole",
+      "iam:GetRolePolicy",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:GetInstanceProfile",
+      "iam:ListInstanceProfilesForRole",
+      "iam:GetOpenIDConnectProvider",
+      "ssm:GetParameter",
+      "sns:ListTopics",
+      "sns:GetTopicAttributes",
+      "sns:ListTagsForResource",
+      "cloudwatch:Describe*",
+      "cloudwatch:GetDashboard",
+      "cloudwatch:ListTagsForResource"
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "plan_policy" {
