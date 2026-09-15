@@ -284,31 +284,31 @@ resource "aws_cloudwatch_dashboard" "omnifood_main" {
         }
       },
 
-      # Widget 4: ALB Health
-      {
-        type   = "metric"
-        x      = 12
-        y      = 10
-        width  = 12
-        height = 6
-        properties = {
-          title = "ALB Health: Host Count"
-          metrics = [
-            ["AWS/ApplicationELB", "HealthyHostCount", "LoadBalancer", module.vpc.alb_arn_suffix, "TargetGroup", module.vpc.target_group_arn_suffix, { stat = "Average", label = "Healthy" }],
-            ["AWS/ApplicationELB", "UnHealthyHostCount", "LoadBalancer", module.vpc.alb_arn_suffix, "TargetGroup", module.vpc.target_group_arn_suffix, { stat = "Maximum", label = "Unhealthy", color = "#d62728" }]
-          ]
-          period = 60
-          stat   = "Average"
-          region = data.aws_region.current.region
-          view   = "timeSeries"
-          yAxis = {
-            left = {
-              min   = 0
-              label = "Hosts"
-            }
-          }
-        }
-      },
+# Widget 4: ALB Health
+{
+  type   = "metric"
+  x      = 12
+  y      = 10
+  width  = 12
+  height = 6
+  properties = {
+    title = "ALB Health: Host Count"
+    metrics = [
+      ["AWS/ApplicationELB", "HealthyHostCount", "LoadBalancer", module.vpc.alb_arn_suffix, "TargetGroup", module.vpc.target_group_arn_suffix, { stat = "Average", label = "Healthy" }],
+      ["AWS/ApplicationELB", "UnHealthyHostCount", "LoadBalancer", module.vpc.alb_arn_suffix, "TargetGroup", module.vpc.target_group_arn_suffix, { stat = "Maximum", label = "Unhealthy", color = "#d62728" }]
+    ]
+    period = 60
+    stat   = "Average"
+    region = data.aws_region.current.region
+    view   = "timeSeries"
+    yAxis = {
+      left = {
+        min   = 0
+        label = "Hosts"
+      }
+    }
+  }
+},
 
       # Widget 5: Errors 
       {
