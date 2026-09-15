@@ -143,7 +143,8 @@ data "aws_iam_policy_document" "deploy_permissions" {
     actions = [
       "s3:CreateBucket",
       "s3:DeleteBucket",
-      "s3:GetBucketAcl",        
+      "s3:GetBucketAcl",
+      "s3:PutBucketAcl",
       "s3:GetObject",
       "s3:PutObject",
       "s3:DeleteObject",
@@ -185,6 +186,7 @@ data "aws_iam_policy_document" "deploy_permissions" {
       "ssm:AddTagsToResource",
     ]
     resources = [
+      "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/omnifood/*",
       "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/AmazonCloudWatch-*"
     ]
   }
@@ -297,6 +299,7 @@ data "aws_iam_policy_document" "plan_permissions" {
       "s3:GetObject",
       "s3:ListBucket",
       "s3:GetBucketPolicy",
+      "s3:GetBucketAcl",
       "s3:GetBucketVersioning",
       "s3:GetEncryptionConfiguration",
       "s3:GetBucketPublicAccessBlock",
