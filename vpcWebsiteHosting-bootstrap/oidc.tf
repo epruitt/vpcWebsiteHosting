@@ -185,7 +185,7 @@ data "aws_iam_policy_document" "deploy_permissions" {
       "ssm:AddTagsToResource",
     ]
     resources = [
-      "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/AmazonCloudWatch-*"
+      "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/omnifood-*"
     ]
   }
 
@@ -299,6 +299,7 @@ data "aws_iam_policy_document" "plan_permissions" {
       "s3:GetBucketPolicy",
       "s3:GetBucketVersioning",
       "s3:GetEncryptionConfiguration",
+      "s3:GetBucketAcl",
       "s3:GetBucketPublicAccessBlock",
       "s3:GetBucketTagging"
     ]
@@ -324,6 +325,7 @@ data "aws_iam_policy_document" "plan_permissions" {
       "ssm:GetParameter",
       "sns:ListTopics",
       "sns:GetTopicAttributes",
+      "sns:ListTagsForResource",
       "cloudwatch:Describe*",
       "cloudwatch:GetDashboard",
       "cloudwatch:ListTagsForResource"
