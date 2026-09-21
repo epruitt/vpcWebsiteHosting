@@ -185,7 +185,7 @@ data "aws_iam_policy_document" "deploy_permissions" {
       "ssm:AddTagsToResource",
     ]
     resources = [
-      "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/AmazonCloudWatch-*"
+      "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/omnifood-*"
     ]
   }
 
