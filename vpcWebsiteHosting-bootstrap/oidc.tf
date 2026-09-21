@@ -328,6 +328,7 @@ data "aws_iam_policy_document" "plan_permissions" {
       "ssm:GetParameter",
       "sns:ListTopics",
       "sns:GetTopicAttributes",
+      "sns:GetSubscriptionAttributes",
       "sns:ListTagsForResource",
       "cloudwatch:Describe*",
       "cloudwatch:GetDashboard",
