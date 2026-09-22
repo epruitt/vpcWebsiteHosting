@@ -139,33 +139,45 @@ data "aws_iam_policy_document" "deploy_permissions" {
   # (omnifood-website-<env>-<region>-<suffix>), so a fixed ARN isn't
   # possible -- wildcard on the known naming prefix instead.
   statement {
-    sid = "WebsiteAssetsBucketAccess"
-    actions = [
-      "s3:CreateBucket",
-      "s3:DeleteBucket",
-      "s3:GetBucketAcl",
-      "s3:GetBucketCors",
-      "s3:PutBucketCors",
-      "s3:GetObject",
-      "s3:PutObject",
-      "s3:DeleteObject",
-      "s3:ListBucket",
-      "s3:GetBucketPolicy",
-      "s3:PutBucketPolicy",
-      "s3:GetBucketVersioning",
-      "s3:PutBucketVersioning",
-      "s3:GetEncryptionConfiguration",
-      "s3:PutEncryptionConfiguration",
-      "s3:GetBucketPublicAccessBlock",
-      "s3:PutBucketPublicAccessBlock",
-      "s3:GetBucketTagging",
-      "s3:PutBucketTagging"
-    ]
-    resources = [
-      "arn:aws:s3:::omnifood-website-*",
-      "arn:aws:s3:::omnifood-website-*/*"
-    ]
-  }
+  sid = "WebsiteBucketAccess"
+
+  actions = [
+    "s3:CreateBucket",
+    "s3:DeleteBucket",
+    "s3:GetBucketAcl",
+    "s3:GetBucketCors",
+    "s3:PutBucketCors",
+    "s3:GetBucketPolicy",
+    "s3:PutBucketPolicy",
+    "s3:GetBucketVersioning",
+    "s3:PutBucketVersioning",
+    "s3:GetEncryptionConfiguration",
+    "s3:PutEncryptionConfiguration",
+    "s3:GetBucketPublicAccessBlock",
+    "s3:PutBucketPublicAccessBlock",
+    "s3:GetBucketTagging",
+    "s3:PutBucketTagging",
+    "s3:ListBucket"
+  ]
+
+  resources = [
+    "arn:aws:s3:::omnifood-website-*"
+  ]
+}
+
+statement {
+  sid = "WebsiteObjectAccess"
+
+  actions = [
+    "s3:GetObject",
+    "s3:PutObject",
+    "s3:DeleteObject"
+  ]
+
+  resources = [
+    "arn:aws:s3:::omnifood-website-*/*"
+  ]
+}
 
   # Core Infrastructure Services (EC2, ALB/ELB, SSM, SNS, CloudWatch)
   statement {
@@ -178,18 +190,20 @@ data "aws_iam_policy_document" "deploy_permissions" {
   }
 
   statement {
-    sid = "SsmParameterAccess"
-    actions = [
-      "ssm:DescribeParameters",
-      "ssm:GetParameter",
-      "ssm:PutParameter",
-      "ssm:DeleteParameter",
-      "ssm:AddTagsToResource",
-    ]
-    resources = [
-      "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/omnifood-*"
-    ]
-  }
+  sid = "SsmParameterAccess"
+
+  actions = [
+    "ssm:DescribeParameters",
+    "ssm:GetParameter",
+    "ssm:PutParameter",
+    "ssm:DeleteParameter",
+    "ssm:AddTagsToResource"
+  ]
+
+  resources = [
+    "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/omnifood/*"
+  ]
+}
 
   statement {
     sid = "SnsAndCloudWatchAccess"
