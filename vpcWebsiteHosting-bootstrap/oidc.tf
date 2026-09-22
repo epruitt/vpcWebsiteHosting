@@ -143,7 +143,9 @@ data "aws_iam_policy_document" "deploy_permissions" {
     actions = [
       "s3:CreateBucket",
       "s3:DeleteBucket",
-      "s3:GetBucketAcl",        
+      "s3:GetBucketAcl",
+      "s3:GetBucketCors",
+      "s3:PutBucketCors",
       "s3:GetObject",
       "s3:PutObject",
       "s3:DeleteObject",
@@ -178,7 +180,7 @@ data "aws_iam_policy_document" "deploy_permissions" {
   statement {
     sid = "SsmParameterAccess"
     actions = [
-      "ssm:DescribeParameters", 
+      "ssm:DescribeParameters",
       "ssm:GetParameter",
       "ssm:PutParameter",
       "ssm:DeleteParameter",
