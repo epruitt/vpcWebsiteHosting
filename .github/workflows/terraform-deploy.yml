@@ -11,6 +11,16 @@ on:
       - 'vpcWebsiteHosting-bootstrap/**.tf'
       - 'vpcWebsiteHosting-bootstrap/**.tfvars'
       - 'vpcWebsiteHosting-bootstrap/agent-config.json'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'What to run'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - destroy
 
 concurrency:
   group: terraform-production-apply
@@ -29,6 +39,7 @@ jobs:
   test:
     name: Test & Plan
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.action == 'deploy'
     defaults:
       run:
         working-directory: vpcWebsiteHosting
@@ -75,6 +86,7 @@ jobs:
   approval:
     name: Production Approval
     needs: test
+    if: needs.test.result == 'success'
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -84,6 +96,7 @@ jobs:
   apply:
     name: Terraform Apply
     needs: approval
+    if: needs.approval.result == 'success'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -116,6 +129,7 @@ jobs:
   smoke-test:
     name: Smoke Test
     needs: apply
+    if: needs.apply.result == 'success'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -163,7 +177,7 @@ jobs:
   tag-last-known-good:
     name: Tag Last Known Good
     needs: [apply, smoke-test]
-    if: success()
+    if: needs.apply.result == 'success' && needs['smoke-test'].result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -225,7 +239,7 @@ jobs:
     name: Destruction Approval
     runs-on: ubuntu-latest
     environment: production
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
     steps:
       - name: Approved for Destruction
         run: echo "Infrastructure destruction approved by reviewer"
@@ -233,6 +247,7 @@ jobs:
   destroy:
     name: Terraform Destroy
     needs: destroy-approval
+    if: needs.destroy-approval.result == 'success'
     runs-on: ubuntu-latest
     defaults:
       run:
