@@ -148,14 +148,14 @@ data "aws_iam_policy_document" "deploy_permissions" {
       "s3:DeleteBucket",
 
       # Bucket metadata/configuration reads
-      "s3:GetBucketAcl",
-      "s3:GetBucketCors",
-      "s3:GetBucketWebsite",
-      "s3:GetBucketPolicy",
-      "s3:GetBucketVersioning",
-      "s3:GetEncryptionConfiguration",
-      "s3:GetBucketPublicAccessBlock",
-      "s3:GetBucketTagging",
+      # NOTE: wildcarded because the AWS provider's aws_s3_bucket resource
+      # reads many sub-configurations on every plan/apply (accelerate,
+      # request payment, logging, replication, lifecycle, notification,
+      # ownership controls, object lock, etc.) regardless of whether this
+      # Terraform config manages them. Enumerating each Get action
+      # individually means a new AccessDenied on every provider version
+      # bump or newly-read attribute. Still scoped to this bucket only.
+      "s3:Get*",
 
       # Bucket configuration writes
       "s3:PutBucketCors",
@@ -340,18 +340,17 @@ data "aws_iam_policy_document" "plan_permissions" {
   }
 
   # Read-only access to the website assets bucket, for plan-time state reads
+  # NOTE: wildcarded for the same reason as the deploy policy's
+  # WebsiteBucketAccess statement -- the AWS provider reads many bucket
+  # sub-configurations during refresh/plan regardless of what this
+  # Terraform config manages, so enumerating each Get action individually
+  # causes repeated AccessDenied errors as new attributes get read.
   statement {
     sid = "WebsiteAssetsBucketReadOnly"
     actions = [
       "s3:GetObject",
       "s3:ListBucket",
-      "s3:GetBucketPolicy",
-      "s3:GetBucketCors",
-      "s3:GetBucketVersioning",
-      "s3:GetEncryptionConfiguration",
-      "s3:GetBucketAcl",
-      "s3:GetBucketPublicAccessBlock",
-      "s3:GetBucketTagging"
+      "s3:Get*"
     ]
     resources = [
       "arn:aws:s3:::omnifood-website-*",
