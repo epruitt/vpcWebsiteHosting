@@ -120,14 +120,17 @@ resource "aws_iam_role" "github_actions_plan" {
 # SSM, SNS, CloudWatch, and the GitHub OIDC provider itself.
 data "aws_iam_policy_document" "deploy_permissions" {
   # S3 State Bucket Access (Native Locking)
+  # S3 State Bucket Access (Native Locking)
   statement {
     sid = "TerraformStateAccess"
+
     actions = [
       "s3:GetObject",
       "s3:PutObject",
       "s3:DeleteObject",
       "s3:ListBucket"
     ]
+
     resources = [
       "arn:aws:s3:::tfstate-dev-us-east-2-x6n4tn",
       "arn:aws:s3:::tfstate-dev-us-east-2-x6n4tn/*"
@@ -139,80 +142,106 @@ data "aws_iam_policy_document" "deploy_permissions" {
   # (omnifood-website-<env>-<region>-<suffix>), so a fixed ARN isn't
   # possible -- wildcard on the known naming prefix instead.
   statement {
-  sid = "WebsiteBucketAccess"
+    sid = "WebsiteBucketAccess"
 
-  actions = [
-    "s3:CreateBucket",
-    "s3:DeleteBucket",
-    "s3:GetBucketAcl",
-    "s3:GetBucketCors",
-    "s3:PutBucketCors",
-    "s3:GetBucketPolicy",
-    "s3:PutBucketPolicy",
-    "s3:GetBucketVersioning",
-    "s3:PutBucketVersioning",
-    "s3:GetEncryptionConfiguration",
-    "s3:PutEncryptionConfiguration",
-    "s3:GetBucketPublicAccessBlock",
-    "s3:PutBucketPublicAccessBlock",
-    "s3:GetBucketTagging",
-    "s3:PutBucketTagging",
-    "s3:ListBucket"
-  ]
+    actions = [
+      "s3:CreateBucket",
+      "s3:DeleteBucket",
 
-  resources = [
-    "arn:aws:s3:::omnifood-website-*"
-  ]
-}
+      # Bucket metadata/configuration reads
+      "s3:GetBucketAcl",
+      "s3:GetBucketCors",
+      "s3:GetBucketWebsite",
+      "s3:GetBucketPolicy",
+      "s3:GetBucketVersioning",
+      "s3:GetEncryptionConfiguration",
+      "s3:GetBucketPublicAccessBlock",
+      "s3:GetBucketTagging",
 
-statement {
-  sid = "WebsiteObjectAccess"
+      # Bucket configuration writes
+      "s3:PutBucketCors",
+      "s3:PutBucketPolicy",
+      "s3:PutBucketVersioning",
+      "s3:PutEncryptionConfiguration",
+      "s3:PutBucketPublicAccessBlock",
 
-  actions = [
-    "s3:GetObject",
-    "s3:PutObject",
-    "s3:DeleteObject"
-  ]
+      "s3:ListBucket"
+    ]
 
-  resources = [
-    "arn:aws:s3:::omnifood-website-*/*"
-  ]
-}
+    resources = [
+      "arn:aws:s3:::omnifood-website-*"
+    ]
+  }
 
-  # Core Infrastructure Services (EC2, ALB/ELB, SSM, SNS, CloudWatch)
+  # S3 Website Object Access
+  statement {
+    sid = "WebsiteObjectAccess"
+
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject"
+    ]
+
+    resources = [
+      "arn:aws:s3:::omnifood-website-*/*"
+    ]
+  }
+
+  # Core Infrastructure Services
   statement {
     sid = "CoreInfraServices"
+
     actions = [
       "ec2:*",
-      "elasticloadbalancing:*",
+      "elasticloadbalancing:*"
     ]
-    resources = ["*"] # ec2/elb actions don't support meaningful resource-level scoping
+
+    resources = ["*"]
+  }
+
+  # SSM Parameter Store Access
+  #
+  # IMPORTANT:
+  # ssm:DescribeParameters does not support resource-level permissions,
+  # therefore it must use Resource = "*".
+  #
+  # The parameter read/write operations remain scoped to /omnifood/*.
+  statement {
+    sid = "SsmDescribeParameters"
+
+    actions = [
+      "ssm:DescribeParameters"
+    ]
+
+    resources = ["*"]
   }
 
   statement {
-  sid = "SsmParameterAccess"
+    sid = "SsmParameterAccess"
 
   actions = [
     "ssm:DescribeParameters",
     "ssm:GetParameter",
     "ssm:PutParameter",
     "ssm:DeleteParameter",
-    "ssm:AddTagsToResource",
-    "ssm:RemoveTagsFromResource",
-    "ssm:ListTagsForResource"
+    "ssm:AddTagsToResource"
   ]
 
-  resources = [
-    "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/omnifood/*"
-  ]
-}
+    resources = [
+      "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/omnifood/*"
+    ]
+  }
 
+  # SNS and CloudWatch
   statement {
     sid = "SnsAndCloudWatchAccess"
+
     actions = [
       "sns:*",
       "cloudwatch:*"
     ]
+
     resources = [
       "arn:aws:sns:*:${data.aws_caller_identity.current.account_id}:cloudwatch-alarms-topic-*",
       "arn:aws:cloudwatch:*:${data.aws_caller_identity.current.account_id}:alarm:*",
@@ -220,11 +249,10 @@ statement {
     ]
   }
 
-  # IAM: role, inline policy, and instance profile lifecycle for the EC2 role
-  # (aws_iam_role.ec2_role, aws_iam_role_policy.s3_access,
-  #  aws_iam_instance_profile.ec2_instance_profile in modules/vpc/ec2-iam-role.tf)
+  # IAM: role, inline policy, and instance profile lifecycle
   statement {
     sid = "Ec2RoleAndProfileManagement"
+
     actions = [
       "iam:CreateRole",
       "iam:DeleteRole",
@@ -245,22 +273,21 @@ statement {
       "iam:AddRoleToInstanceProfile",
       "iam:RemoveRoleFromInstanceProfile"
     ]
-    # Scoped to the project's EC2 role/profile naming pattern rather than "*",
-    # since this is the statement that would matter most for privilege
-    # escalation if over-scoped.
+
     resources = [
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:instance-profile/*"
     ]
   }
 
-  # iam:PassRole - scoped narrowly and separated from the broader IAM
-  # statement above. This only needs to cover the EC2 instance role being
-  # passed to the instance profile, not an unrestricted "*".
+  # iam:PassRole
   statement {
-    sid       = "PassEc2RoleOnly"
-    actions   = ["iam:PassRole"]
-    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*"]
+    sid     = "PassEc2RoleOnly"
+    actions = ["iam:PassRole"]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*"
+    ]
+
     condition {
       test     = "StringEquals"
       variable = "iam:PassedToService"
@@ -268,11 +295,10 @@ statement {
     }
   }
 
-  # Allow this pipeline to manage its own OIDC provider resource, since it's
-  # tracked in the same Terraform state (required for future plan/apply runs
-  # to read/update it without drifting or erroring).
+  # Allow this pipeline to manage its own OIDC provider
   statement {
     sid = "ManageOwnOidcProvider"
+
     actions = [
       "iam:CreateOpenIDConnectProvider",
       "iam:DeleteOpenIDConnectProvider",
@@ -280,7 +306,10 @@ statement {
       "iam:UpdateOpenIDConnectProviderThumbprint",
       "iam:TagOpenIDConnectProvider"
     ]
-    resources = ["arn:aws:iam::*:oidc-provider/token.actions.githubusercontent.com"]
+
+    resources = [
+      "arn:aws:iam::*:oidc-provider/token.actions.githubusercontent.com"
+    ]
   }
 }
 
@@ -298,7 +327,7 @@ data "aws_iam_policy_document" "plan_permissions" {
     sid = "TerraformStateAccess"
     actions = [
       "s3:GetObject",
-      "s3:PutObject", # Needed for lockfile
+      "s3:PutObject",    # Needed for lockfile
       "s3:DeleteObject", # Needed to release the lockfile (S3 native locking)
       "s3:ListBucket"
     ]
