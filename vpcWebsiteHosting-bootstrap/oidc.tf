@@ -120,7 +120,6 @@ resource "aws_iam_role" "github_actions_plan" {
 # SSM, SNS, CloudWatch, and the GitHub OIDC provider itself.
 data "aws_iam_policy_document" "deploy_permissions" {
   # S3 State Bucket Access (Native Locking)
-  # S3 State Bucket Access (Native Locking)
   statement {
     sid = "TerraformStateAccess"
 
@@ -164,6 +163,7 @@ data "aws_iam_policy_document" "deploy_permissions" {
       "s3:PutBucketVersioning",
       "s3:PutEncryptionConfiguration",
       "s3:PutBucketPublicAccessBlock",
+      "s3:PutBucketTagging",
 
       "s3:ListBucket"
     ]
@@ -220,13 +220,15 @@ data "aws_iam_policy_document" "deploy_permissions" {
   statement {
     sid = "SsmParameterAccess"
 
-  actions = [
-    "ssm:DescribeParameters",
-    "ssm:GetParameter",
-    "ssm:PutParameter",
-    "ssm:DeleteParameter",
-    "ssm:AddTagsToResource"
-  ]
+    actions = [
+      "ssm:DescribeParameters",
+      "ssm:GetParameter",
+      "ssm:PutParameter",
+      "ssm:DeleteParameter",
+      "ssm:AddTagsToResource",
+      "ssm:RemoveTagsFromResource",
+      "ssm:ListTagsForResource"
+    ]
 
     resources = [
       "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/omnifood/*"
