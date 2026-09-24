@@ -197,7 +197,9 @@ statement {
     "ssm:GetParameter",
     "ssm:PutParameter",
     "ssm:DeleteParameter",
-    "ssm:AddTagsToResource"
+    "ssm:AddTagsToResource",
+    "ssm:RemoveTagsFromResource",
+    "ssm:ListTagsForResource"
   ]
 
   resources = [
@@ -340,6 +342,7 @@ data "aws_iam_policy_document" "plan_permissions" {
       "iam:ListInstanceProfilesForRole",
       "iam:GetOpenIDConnectProvider",
       "ssm:GetParameter",
+      "ssm:ListTagsForResource",
       "sns:ListTopics",
       "sns:GetTopicAttributes",
       "sns:GetSubscriptionAttributes",
