@@ -164,6 +164,7 @@ data "aws_iam_policy_document" "deploy_permissions" {
       "s3:PutEncryptionConfiguration",
       "s3:PutBucketPublicAccessBlock",
       "s3:PutBucketTagging",
+      "s3:PutBucketWebsite",
 
       "s3:ListBucket"
     ]
@@ -180,7 +181,12 @@ data "aws_iam_policy_document" "deploy_permissions" {
     actions = [
       "s3:GetObject",
       "s3:PutObject",
-      "s3:DeleteObject"
+      "s3:DeleteObject",
+      "s3:GetObjectTagging",
+      "s3:PutObjectTagging",
+      "s3:DeleteObjectTagging",
+      "s3:GetObjectVersionTagging",
+      "s3:PutObjectVersionTagging"
     ]
 
     resources = [
