@@ -86,6 +86,7 @@ jobs:
   approval:
     name: Production Approval
     needs: test
+    if: needs.test.result == 'success'
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -95,6 +96,7 @@ jobs:
   apply:
     name: Terraform Apply
     needs: approval
+    if: needs.approval.result == 'success'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -127,6 +129,7 @@ jobs:
   smoke-test:
     name: Smoke Test
     needs: apply
+    if: needs.apply.result == 'success'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -174,7 +177,7 @@ jobs:
   tag-last-known-good:
     name: Tag Last Known Good
     needs: [apply, smoke-test]
-    if: success()
+    if: needs.apply.result == 'success' && needs['smoke-test'].result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -244,6 +247,7 @@ jobs:
   destroy:
     name: Terraform Destroy
     needs: destroy-approval
+    if: needs.destroy-approval.result == 'success'
     runs-on: ubuntu-latest
     defaults:
       run:
