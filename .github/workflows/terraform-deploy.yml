@@ -11,6 +11,16 @@ on:
       - 'vpcWebsiteHosting-bootstrap/**.tf'
       - 'vpcWebsiteHosting-bootstrap/**.tfvars'
       - 'vpcWebsiteHosting-bootstrap/agent-config.json'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'What to run'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - destroy
 
 concurrency:
   group: terraform-production-apply
@@ -29,6 +39,7 @@ jobs:
   test:
     name: Test & Plan
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.action == 'deploy'
     defaults:
       run:
         working-directory: vpcWebsiteHosting
@@ -225,7 +236,7 @@ jobs:
     name: Destruction Approval
     runs-on: ubuntu-latest
     environment: production
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
     steps:
       - name: Approved for Destruction
         run: echo "Infrastructure destruction approved by reviewer"
