@@ -158,7 +158,7 @@ jobs:
           echo "Testing endpoint: $DNS_NAME"
 
       - name: Wait for ALB Propagation
-        run: sleep 30
+        run: sleep 60
 
       - name: HTTP Health Check
         run: |
