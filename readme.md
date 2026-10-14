@@ -157,6 +157,7 @@ Directory structure:
             └── terraform-pr-check.yml
 
 ```
+## Pipeline Structure
 
 ```mermaid
 flowchart LR
