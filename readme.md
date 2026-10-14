@@ -26,7 +26,7 @@ The website is just the workload. The point of the project is the infrastructure
 - Debugging real pipeline failures (IAM gaps, state locking, OS argument limits) and documenting the fixes
 ---
 
-[![Architecture diagram of epruitt/vpcwebsitehosting](https://gitdiagram.com/epruitt/vpcwebsitehosting/diagram.png)](https://gitdiagram.com/epruitt/vpcwebsitehosting?utm_source=readme&utm_medium=picture)
+[![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/epruitt/vpcwebsitehosting?utm_source=readme&utm_medium=badge)
 
 ## Project Structure
 
@@ -85,7 +85,7 @@ Directory structure:
 
 ```
 
-```mermaid
+```
 flowchart LR
     PR[Pull request] --> CHK["PR checks<br/>fmt, validate, Checkov, plan"]
     CHK -->|plan comment on PR| MERGE[Merge to main]
@@ -210,7 +210,9 @@ Being upfront about scope, since this is a portfolio build rather than a product
 - **Deploy role is broad in places** (`ec2:*`, `elasticloadbalancing:*`, `s3:Get*`). A narrowing pass is planned.
 - **Inline `user_data`.** Moving the bootstrap script to `templatefile()` would make it lintable and easier to read.
 - **Rollback scope.** Rollback re-applies the previous commit's Terraform; it does not restore data, which is fine here because the site is stateless.
+
 ---
+
 ## Author
  
 **Emanuel Pruitt**: Cloud/DevOps engineer, 
