@@ -268,16 +268,22 @@ jobs:
       - name: Terraform Init
         run: terraform init -input=false
 
+      - name: Capture SNS Topic ARN
+        id: sns
+        continue-on-error: true
+        run: |
+          echo "topic_arn=$(terraform output -raw sns_topic_arn)" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Destruction Starting via SNS
+        if: steps.sns.outcome == 'success'
+        continue-on-error: true
+        run: |
+          aws sns publish \
+            --topic-arn "${{ steps.sns.outputs.topic_arn }}" \
+            --message "INFRASTRUCTURE DESTRUCTION STARTING on commit ${{ github.sha }}." \
+            --subject "Terraform Destruction Notification"
+
       - name: Terraform Destroy
         env:
           TF_VAR_alert_email: ${{ secrets.TF_VAR_ALERT_EMAIL }}
         run: terraform destroy -auto-approve -input=false
-
-      - name: Notify Destruction via SNS
-        if: success()
-        run: |
-          TOPIC_ARN=$(terraform output -raw sns_topic_arn)
-          aws sns publish \
-            --topic-arn "$TOPIC_ARN" \
-            --message "INFRASTRUCTURE DESTRUCTION COMPLETED: All resources have been destroyed on commit ${{ github.sha }}." \
-            --subject "Terraform Destruction Notification"

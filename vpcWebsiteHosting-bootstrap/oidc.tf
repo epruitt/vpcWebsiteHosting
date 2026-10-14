@@ -166,7 +166,8 @@ data "aws_iam_policy_document" "deploy_permissions" {
       "s3:PutBucketTagging",
       "s3:PutBucketWebsite",
 
-      "s3:ListBucket"
+      "s3:ListBucket",
+      "s3:ListBucketVersions"
     ]
 
     resources = [
@@ -180,8 +181,10 @@ data "aws_iam_policy_document" "deploy_permissions" {
 
     actions = [
       "s3:GetObject",
+      "s3:GetObjectVersion",
       "s3:PutObject",
       "s3:DeleteObject",
+      "s3:DeleteObjectVersion",
       "s3:GetObjectTagging",
       "s3:PutObjectTagging",
       "s3:DeleteObjectTagging",
@@ -274,6 +277,7 @@ data "aws_iam_policy_document" "deploy_permissions" {
       "iam:GetRolePolicy",
       "iam:DeleteRolePolicy",
       "iam:ListRolePolicies",
+      "iam:ListInstanceProfilesForRole",
       "iam:CreateInstanceProfile",
       "iam:DeleteInstanceProfile",
       "iam:GetInstanceProfile",
